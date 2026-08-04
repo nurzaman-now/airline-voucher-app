@@ -18,6 +18,38 @@ func InitVoucherController() *VoucherController {
 	return &VoucherController{}
 }
 
+func (c *VoucherController) CheckExistsVoucher(ctx *gin.Context, req voucher.CheckVoucherRequest) (error, *models.Voucers, string) {
+	var voucher models.Voucers
+	query := `
+		SELECT id, crew_name, crew_id, flight_number, flight_date, aircraft_type, seat1, seat2, seat3, created_at 
+		FROM vouchers 
+		WHERE flight_number = ? AND flight_date = ? 
+		LIMIT 1
+	`
+
+	err := database.DB.QueryRow(query, req.FlightNumber, req.FlightDate).Scan(
+		&voucher.ID,
+		&voucher.CrewName,
+		&voucher.CrewID,
+		&voucher.FlightNumber,
+		&voucher.FlightDate,
+		&voucher.AircraftType,
+		&voucher.Seat1,
+		&voucher.Seat2,
+		&voucher.Seat3,
+		&voucher.CreatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil, "Voucher belum tersedia"
+		}
+		return err, nil, "Terjadi kesalahan saat memeriksa database"
+	}
+
+	return nil, &voucher, "Voucher sudah ada"
+}
+
 func (c *VoucherController) CheckVoucher(ctx *gin.Context) {
 	// Menginisialisasi struct untuk menyimpan data dari request
 	var req voucher.CheckVoucherRequest
