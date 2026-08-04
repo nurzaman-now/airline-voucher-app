@@ -10,9 +10,10 @@ func ResponseSuccess(ctx *gin.Context, data any, message string) {
 	})
 }
 
-func ResponseError(ctx *gin.Context, message string) {
+func ResponseError(ctx *gin.Context, data any, message string) {
 	ctx.JSON(400, gin.H{
 		"status":  "error",
+		"data":    data,
 		"message": message,
 	})
 }
