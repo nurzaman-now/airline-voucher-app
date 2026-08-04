@@ -91,6 +91,30 @@ func (c *VoucherController) GenerateVoucher(ctx *gin.Context) {
 		CreatedAt:    time.Now().Format(time.RFC3339),
 	}
 
+	// Query ke Database dengan Parameterized Query
+	var exists bool
+	queryCheck := `
+		SELECT EXISTS(
+			SELECT 1 FROM vouchers 
+			WHERE flight_number = ? AND flight_date = ? 
+			LIMIT 1
+		)
+	`
+
+	// Check Voucher di Database (mencegah client kemungkinan tidak get check voucher)
+	errCheck := database.DB.QueryRow(queryCheck, voucher.FlightNumber, voucher.FlightDate).Scan(&exists)
+	if errCheck != nil && errCheck != sql.ErrNoRows {
+		// Jika terjadi error pada sisi server/database
+		handlers.ResponseError(ctx, "Terjadi kesalahan saat memeriksa database")
+		return
+	}
+
+	if exists {
+		// Jika Voucher sudah ada
+		handlers.ResponseError(ctx, "Voucher sudah ada")
+		return
+	}
+
 	query := `
 		INSERT INTO vouchers (crew_name, crew_id, flight_number, flight_date, aircraft_type, seat1, seat2, seat3, created_at) 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
