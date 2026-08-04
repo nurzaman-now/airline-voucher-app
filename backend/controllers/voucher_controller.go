@@ -71,7 +71,7 @@ func (c *VoucherController) CheckVoucher(ctx *gin.Context) {
 	}
 
 	// Kembalikan berhasil jika Voucher tersedia
-	handlers.ResponseSuccess(ctx, voucherResult, "Voucher tersedia")
+	handlers.ResponseSuccess(ctx, voucherResult, "Voucher bisa di generate")
 }
 
 func (c *VoucherController) GenerateVoucher(ctx *gin.Context) {
