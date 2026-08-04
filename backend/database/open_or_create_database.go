@@ -29,7 +29,8 @@ func OpenOrCreateDatabase() {
 		seat1 TEXT NOT NULL,
 		seat2 TEXT NOT NULL,
 		seat3 TEXT NOT NULL,
-		created_at TEXT NOT NULL
+		created_at TEXT NOT NULL,
+		UNIQUE(flight_number, flight_date)
 	);`
 
 	_, err = DB.Exec(createTableQuery)
