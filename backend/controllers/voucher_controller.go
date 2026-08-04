@@ -59,36 +59,19 @@ func (c *VoucherController) CheckVoucher(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		reqErr := handlers.GetErrorMap(err)
 		reqMessages := handlers.MapToString(reqErr)
-		handlers.ResponseError(ctx, "Data yang di inputkan tidak sesuai: "+reqMessages)
+		handlers.ResponseError(ctx, nil, "Data yang di inputkan tidak sesuai: "+reqMessages)
 		return
 	}
 
-	// Query ke Database dengan Parameterized Query
-	var exists bool
-	query := `
-		SELECT EXISTS(
-			SELECT 1 FROM vouchers 
-			WHERE flight_number = ? AND flight_date = ? 
-			LIMIT 1
-		)
-	`
-
-	// Check Voucher di Database
-	err := database.DB.QueryRow(query, req.FlightNumber, req.FlightDate).Scan(&exists)
-	if err != nil && err != sql.ErrNoRows {
-		// Jika terjadi error pada sisi server/database
-		handlers.ResponseError(ctx, "Terjadi kesalahan saat memeriksa database")
-		return
-	}
-
-	if exists {
-		// Jika Voucher sudah ada
-		handlers.ResponseError(ctx, "Voucher sudah ada")
+	// Cek apakah voucher sudah ada
+	errResult, voucherResult, msg := c.CheckExistsVoucher(ctx, req)
+	if errResult != nil || voucherResult != nil {
+		handlers.ResponseError(ctx, voucherResult, msg)
 		return
 	}
 
 	// Kembalikan berhasil jika Voucher tersedia
-	handlers.ResponseSuccess(ctx, nil, "Voucher tersedia")
+	handlers.ResponseSuccess(ctx, voucherResult, "Voucher tersedia")
 }
 
 func (c *VoucherController) GenerateVoucher(ctx *gin.Context) {
@@ -100,18 +83,31 @@ func (c *VoucherController) GenerateVoucher(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		reqErr := handlers.GetErrorMap(err)
 		reqMessages := handlers.MapToString(reqErr)
-		handlers.ResponseError(ctx, "Data yang di inputkan tidak sesuai: "+reqMessages)
+		handlers.ResponseError(ctx, nil, "Data yang di inputkan tidak sesuai: "+reqMessages)
+		return
+	}
+
+	// inisiasi data untuk cek voucher
+	var reqCheck = voucher.CheckVoucherRequest{
+		FlightNumber: req.FlightNumber,
+		FlightDate:   req.FlightDate,
+	}
+
+	// Cek apakah voucher sudah ada
+	errResult, voucherResult, msg := c.CheckExistsVoucher(ctx, reqCheck)
+	if errResult != nil || voucherResult != nil {
+		handlers.ResponseError(ctx, voucherResult, msg)
 		return
 	}
 
 	// Generate 3 kursi unik secara acak berdasarkan tipe pesawat
 	seats, err := handlers.GenerateRandomSeats(req.AircraftType)
 	if err != nil {
-		handlers.ResponseError(ctx, "Gagal menghasilkan kursi: "+err.Error())
+		handlers.ResponseError(ctx, nil, "Gagal menghasilkan kursi: "+err.Error())
 		return
 	}
 
-	voucher := models.Voucers{
+	dataVoucher := models.Voucers{
 		CrewName:     req.CrewName,
 		CrewID:       req.CrewId,
 		FlightNumber: req.FlightNumber,
@@ -123,51 +119,27 @@ func (c *VoucherController) GenerateVoucher(ctx *gin.Context) {
 		CreatedAt:    time.Now().Format(time.RFC3339),
 	}
 
-	// Query ke Database dengan Parameterized Query
-	var exists bool
-	queryCheck := `
-		SELECT EXISTS(
-			SELECT 1 FROM vouchers 
-			WHERE flight_number = ? AND flight_date = ? 
-			LIMIT 1
-		)
-	`
-
-	// Check Voucher di Database (mencegah client kemungkinan tidak get check voucher)
-	errCheck := database.DB.QueryRow(queryCheck, voucher.FlightNumber, voucher.FlightDate).Scan(&exists)
-	if errCheck != nil && errCheck != sql.ErrNoRows {
-		// Jika terjadi error pada sisi server/database
-		handlers.ResponseError(ctx, "Terjadi kesalahan saat memeriksa database")
-		return
-	}
-
-	if exists {
-		// Jika Voucher sudah ada
-		handlers.ResponseError(ctx, "Voucher sudah ada")
-		return
-	}
-
 	query := `
 		INSERT INTO vouchers (crew_name, crew_id, flight_number, flight_date, aircraft_type, seat1, seat2, seat3, created_at) 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
-	result, err := database.DB.Exec(query, voucher.CrewName, voucher.CrewID, voucher.FlightNumber, voucher.FlightDate, voucher.AircraftType, voucher.Seat1, voucher.Seat2, voucher.Seat3, voucher.CreatedAt)
+	voucherCreated, err := database.DB.Exec(query, dataVoucher.CrewName, dataVoucher.CrewID, dataVoucher.FlightNumber, dataVoucher.FlightDate, dataVoucher.AircraftType, dataVoucher.Seat1, dataVoucher.Seat2, dataVoucher.Seat3, dataVoucher.CreatedAt)
 	if err != nil {
 		// Jika terjadi error pada sisi server/database
-		handlers.ResponseError(ctx, "Gagal menyimpan Voucher")
+		handlers.ResponseError(ctx, nil, "Gagal menyimpan Voucher")
 		return
 	}
 
 	// Mendapatkan ID Voucher yang baru dibuat
-	id, err := result.LastInsertId()
+	id, err := voucherCreated.LastInsertId()
 	if err != nil {
-		handlers.ResponseError(ctx, "Gagal mendapatkan ID Voucher")
+		handlers.ResponseError(ctx, nil, "Gagal mendapatkan ID Voucher")
 		return
 	}
 
 	// Mengupdate ID Voucher
-	voucher.ID = int(id)
+	dataVoucher.ID = int(id)
 
 	// Mengembalikan data voucher yang berhasil disimpan
-	handlers.ResponseSuccess(ctx, voucher, "Generate Voucher Berhasil")
+	handlers.ResponseSuccess(ctx, dataVoucher, "Generate Voucher Berhasil")
 }
