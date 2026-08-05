@@ -1,122 +1,229 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React from 'react';
+import {
+  Box, TextField, Typography, Paper, Container, FormControl, Select, MenuItem, InputLabel, Button, Tooltip
+} from '@mui/material';
+import AirplaneTicketIcon from '@mui/icons-material/AirplaneTicket';
+import '@fontsource/roboto/300.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
+
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { checkVoucher, generateVouchers } from './services/ApiClient';
+import { useSnackbar } from 'notistack';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { enqueueSnackbar } = useSnackbar();
+  const [loading, setLoading] = React.useState(false);
+  const [formData, setFormData] = React.useState({
+    crewName: "",
+    crewId: "",
+    flightNumber: "",
+    flightDate: null,
+    aircraftType: ""
+  });
+
+  const AircraftType = {
+    ATR: "ATR",
+    Airbus320: "Airbus 320",
+    Boeing737Max: "Boeing 737 Max"
+  };
+
+  const handleInputChange = (field) => (event) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: event.target.value,
+    }));
+  };
+
+  const handleDateChange = (newValue) => {
+    setFormData((prev) => ({
+      ...prev,
+      flightDate: newValue,
+    }));
+  };
+
+  const handleGenerateVouchers = async (event) => {
+    if (event) {
+      event.preventDefault(); // Mencegah reload halaman
+    }
+    setLoading(true);
+    try {
+      // Format flightDate menjadi "DD/MM/YYYY HH:mm" agar sesuai dengan validator backend
+      const formattedDate = formData.flightDate ? formData.flightDate.format('YYYY-MM-DD HH:mm:ss') : '';
+
+      // check status voucher
+      const checkStatusVoucher = await checkVoucher(formData.flightNumber, formattedDate);
+      enqueueSnackbar(checkStatusVoucher.message, {
+        variant: checkStatusVoucher.status === 'success' ? 'success' : 'error',
+        anchorOrigin: {
+          horizontal: 'center',
+          vertical: 'top'
+        },
+        autoHideDuration: 3000,
+      });
+      if (checkStatusVoucher.status === 'success') {
+        const dataSend = {
+          ...formData,
+          flightDate: formattedDate,
+        }
+        const generateVoucher = await generateVouchers(dataSend)
+        enqueueSnackbar(generateVoucher.message, {
+          variant: generateVoucher.status === 'success' ? 'success' : 'error',
+          anchorOrigin: {
+            horizontal: 'center',
+            vertical: 'top'
+          },
+          autoHideDuration: 3000,
+        });
+      }
+
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Box
+        sx={{
+          width: '100vw',
+          minHeight: '100vh',
+          backgroundImage: 'url(/airplane_bg.jpg)',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          m: 0,
+          p: 0,
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.4)', // Overlay gelap elegan
+            zIndex: 1,
+          },
+        }}
+      >
+        <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 2 }}>
+          <Paper
+            elevation={6}
+            sx={{
+              p: 4,
+              borderRadius: 4,
+              textAlign: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)', // Putih bersih dengan sedikit transparansi modern
+              backdropFilter: 'blur(8px)', // Efek kaca modern (glassmorphism)
+              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                mb: 3,
+                textAlign: 'left',
+              }}
+            >
+              <img src="/logo.png" alt="Logo" style={{ height: '55px', width: 'auto', objectFit: 'contain' }} />
+              <Box>
+                <Typography variant="h5" fontWeight="bold" color="text.primary" sx={{ lineHeight: 1.2 }}>
+                  Voucher Seat Assignment
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Mohon isi data berikut
+                </Typography>
+              </Box>
+            </Box>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
+            <Box
+              component="form"
+              onSubmit={handleGenerateVouchers}
+              sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+              autoComplete="off"
+            >
+              <TextField
+                required
+                id="outlined-required-name"
+                label="Crew Name"
+                value={formData.crewName}
+                onChange={handleInputChange('crewName')}
+              />
+              <TextField
+                required
+                id="outlined-required-id"
+                label="Crew ID"
+                value={formData.crewId}
+                onChange={handleInputChange('crewId')}
+              />
+              <TextField
+                required
+                id="outlined-required-flight"
+                label="Flight Number"
+                value={formData.flightNumber}
+                onChange={handleInputChange('flightNumber')}
+              />
+              <DateTimePicker
+                label="Flight Date"
+                value={formData.flightDate}
+                onChange={handleDateChange}
+                ampm={false}
+                format="DD/MM/YYYY HH:mm"
+                slotProps={{
+                  textField: {
+                    required: true,
+                    fullWidth: true,
+                  },
+                }}
+              />
+              <FormControl fullWidth required sx={{ textAlign: 'left' }}>
+                <InputLabel id="select-aircraft-type-label" sx={{ textAlign: 'left' }}>Aircraft Type</InputLabel>
+                <Select
+                  labelId="select-aircraft-type-label"
+                  id="select-aircraft-type"
+                  value={formData.aircraftType}
+                  onChange={handleInputChange('aircraftType')}
+                  label="Aircraft Type"
+                  sx={{
+                    textAlign: 'left',
+                    '& .MuiSelect-select': {
+                      textAlign: 'left',
+                    },
+                  }}
                 >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+                  {
+                    Object.values(AircraftType).map((aircraftType) => {
+                      return (
+                        <MenuItem key={aircraftType} value={aircraftType} sx={{ justifyContent: 'flex-start' }}>
+                          {aircraftType}
+                        </MenuItem>
+                      );
+                    })
+                  }
+                </Select>
+              </FormControl>
+              <Tooltip title="Generate Voucher">
+                <Button type="submit" variant="contained" loading={loading} size="large">
+                  <AirplaneTicketIcon sx={{ marginRight: 1 }} /> Generate
+                </Button>
+              </Tooltip>
+            </Box>
+          </Paper>
+        </Container>
+      </Box>
+    </LocalizationProvider>
+  );
 }
 
-export default App
+export default App;
