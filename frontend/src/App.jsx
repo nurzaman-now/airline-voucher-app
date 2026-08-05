@@ -14,8 +14,10 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { checkVoucher, generateVouchers } from './services/ApiClient';
 import { useSnackbar } from 'notistack';
 
+
 function App() {
   const { enqueueSnackbar } = useSnackbar();
+  const [formResult, setFormResult] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const [formData, setFormData] = React.useState({
     crewName: "",
@@ -70,6 +72,17 @@ function App() {
           flightDate: formattedDate,
         }
         const generateVoucher = await generateVouchers(dataSend)
+        setFormResult({
+          crewName: generateVoucher?.data?.crew_name,
+          crewId: generateVoucher?.data?.crew_id,
+          flightNumber: generateVoucher?.data?.flight_number,
+          flightDate: generateVoucher?.data?.flight_date,
+          aircraftType: generateVoucher?.data?.aircraft_type,
+          seat1: generateVoucher?.data?.seat1,
+          seat2: generateVoucher?.data?.seat2,
+          seat3: generateVoucher?.data?.seat3,
+          createdAt: generateVoucher?.data?.created_at,
+        })
         enqueueSnackbar(generateVoucher.message, {
           variant: generateVoucher.status === 'success' ? 'success' : 'error',
           anchorOrigin: {
@@ -78,6 +91,18 @@ function App() {
           },
           autoHideDuration: 3000,
         });
+      } else {
+        setFormResult({
+          crewName: checkStatusVoucher?.data?.crew_name,
+          crewId: checkStatusVoucher?.data?.crew_id,
+          flightNumber: checkStatusVoucher?.data?.flight_number,
+          flightDate: checkStatusVoucher?.data?.flight_date,
+          aircraftType: checkStatusVoucher?.data?.aircraft_type,
+          seat1: checkStatusVoucher?.data?.seat1,
+          seat2: checkStatusVoucher?.data?.seat2,
+          seat3: checkStatusVoucher?.data?.seat3,
+          createdAt: checkStatusVoucher?.data?.created_at,
+        })
       }
 
     } catch (error) {
