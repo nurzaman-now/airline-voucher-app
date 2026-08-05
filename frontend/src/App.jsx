@@ -1,6 +1,7 @@
 import React from 'react';
 import {
-  Box, TextField, Typography, Paper, Container, FormControl, Select, MenuItem, InputLabel, Button, Tooltip
+  Box, TextField, Typography, Paper, Container, FormControl, Select, MenuItem, InputLabel, Button, Tooltip, Grid,
+  Table, TableBody, TableCell, TableContainer, TableRow
 } from '@mui/material';
 import AirplaneTicketIcon from '@mui/icons-material/AirplaneTicket';
 import '@fontsource/roboto/300.css';
@@ -140,24 +141,24 @@ function App() {
           },
         }}
       >
-        <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 2 }}>
+        <Container maxWidth="md" sx={{ position: 'relative', zIndex: 2 }}>
           <Paper
             elevation={6}
             sx={{
               p: 4,
               borderRadius: 4,
-              textAlign: 'center',
               backgroundColor: 'rgba(255, 255, 255, 0.95)', // Putih bersih dengan sedikit transparansi modern
               backdropFilter: 'blur(8px)', // Efek kaca modern (glassmorphism)
               boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
             }}
           >
+            {/* Header */}
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 2,
-                mb: 3,
+                mb: 4,
                 textAlign: 'left',
               }}
             >
@@ -172,78 +173,181 @@ function App() {
               </Box>
             </Box>
 
-            <Box
-              component="form"
-              onSubmit={handleGenerateVouchers}
-              sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
-              autoComplete="off"
-            >
-              <TextField
-                required
-                id="outlined-required-name"
-                label="Crew Name"
-                value={formData.crewName}
-                onChange={handleInputChange('crewName')}
-              />
-              <TextField
-                required
-                id="outlined-required-id"
-                label="Crew ID"
-                value={formData.crewId}
-                onChange={handleInputChange('crewId')}
-              />
-              <TextField
-                required
-                id="outlined-required-flight"
-                label="Flight Number"
-                value={formData.flightNumber}
-                onChange={handleInputChange('flightNumber')}
-              />
-              <DateTimePicker
-                label="Flight Date"
-                value={formData.flightDate}
-                onChange={handleDateChange}
-                ampm={false}
-                format="DD/MM/YYYY HH:mm"
-                slotProps={{
-                  textField: {
-                    required: true,
-                    fullWidth: true,
-                  },
-                }}
-              />
-              <FormControl fullWidth required sx={{ textAlign: 'left' }}>
-                <InputLabel id="select-aircraft-type-label" sx={{ textAlign: 'left' }}>Aircraft Type</InputLabel>
-                <Select
-                  labelId="select-aircraft-type-label"
-                  id="select-aircraft-type"
-                  value={formData.aircraftType}
-                  onChange={handleInputChange('aircraftType')}
-                  label="Aircraft Type"
+            {/* Split Grid: Kiri untuk Form, Kanan untuk Result Voucher */}
+            <Grid container spacing={4}>
+              {/* Kolom Kiri: Form Input */}
+              <Grid item xs={12} md={6} sx={{ minWidth: '48%' }}>
+                <Box
+                  component="form"
+                  onSubmit={handleGenerateVouchers}
+                  sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+                  autoComplete="off"
+                >
+                  <TextField
+                    required
+                    id="outlined-required-name"
+                    label="Crew Name"
+                    value={formData.crewName}
+                    onChange={handleInputChange('crewName')}
+                    fullWidth
+                  />
+                  <TextField
+                    required
+                    id="outlined-required-id"
+                    label="Crew ID"
+                    value={formData.crewId}
+                    onChange={handleInputChange('crewId')}
+                    fullWidth
+                  />
+                  <TextField
+                    required
+                    id="outlined-required-flight"
+                    label="Flight Number"
+                    value={formData.flightNumber}
+                    onChange={handleInputChange('flightNumber')}
+                    fullWidth
+                  />
+                  <DateTimePicker
+                    label="Flight Date"
+                    value={formData.flightDate}
+                    onChange={handleDateChange}
+                    ampm={false}
+                    format="DD/MM/YYYY HH:mm"
+                    slotProps={{
+                      textField: {
+                        required: true,
+                        fullWidth: true,
+                      },
+                    }}
+                  />
+                  <FormControl fullWidth required sx={{ textAlign: 'left' }}>
+                    <InputLabel id="select-aircraft-type-label" sx={{ textAlign: 'left' }}>Aircraft Type</InputLabel>
+                    <Select
+                      labelId="select-aircraft-type-label"
+                      id="select-aircraft-type"
+                      value={formData.aircraftType}
+                      onChange={handleInputChange('aircraftType')}
+                      label="Aircraft Type"
+                      sx={{
+                        textAlign: 'left',
+                        '& .MuiSelect-select': {
+                          textAlign: 'left',
+                        },
+                      }}
+                    >
+                      {
+                        Object.values(AircraftType).map((aircraftType) => {
+                          return (
+                            <MenuItem key={aircraftType} value={aircraftType} sx={{ justifyContent: 'flex-start' }}>
+                              {aircraftType}
+                            </MenuItem>
+                          );
+                        })
+                      }
+                    </Select>
+                  </FormControl>
+                  <Tooltip title="Generate Voucher">
+                    <Button type="submit" variant="contained" loading={loading} size="large" fullWidth>
+                      <AirplaneTicketIcon sx={{ marginRight: 1 }} /> Generate
+                    </Button>
+                  </Tooltip>
+                </Box>
+              </Grid>
+
+              {/* Kolom Kanan: Tempat/Box untuk Result Voucher */}
+              <Grid item xs={12} md={6} sx={{ width: '47%' }}>
+                <Box
                   sx={{
-                    textAlign: 'left',
-                    '& .MuiSelect-select': {
-                      textAlign: 'left',
-                    },
+                    height: '100%',
+                    minHeight: '280px',
+                    border: '2px dashed #e2e8f0',
+                    borderRadius: 3,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    p: 3,
+                    backgroundColor: '#fafafa',
                   }}
                 >
+                  <Typography variant="h6" color="text.secondary" fontWeight="medium" gutterBottom>
+                    Hasil Voucher
+                  </Typography>
                   {
-                    Object.values(AircraftType).map((aircraftType) => {
-                      return (
-                        <MenuItem key={aircraftType} value={aircraftType} sx={{ justifyContent: 'flex-start' }}>
-                          {aircraftType}
-                        </MenuItem>
-                      );
-                    })
+                    formResult ? (
+                      <TableContainer sx={{ mt: 2 }}>
+                        <Table size="small" aria-label="voucher details">
+                          <TableBody>
+                            <TableRow sx={{ '& td': { border: 0, py: 0.75 } }}>
+                              <TableCell component="th" scope="row" sx={{ p: 0, fontWeight: 'bold', color: 'text.secondary', width: '40%' }}>
+                                Crew Name
+                              </TableCell>
+                              <TableCell sx={{ p: 0 }}>: {formResult.crewName}</TableCell>
+                            </TableRow>
+                            <TableRow sx={{ '& td': { border: 0, py: 0.75 } }}>
+                              <TableCell component="th" scope="row" sx={{ p: 0, fontWeight: 'bold', color: 'text.secondary' }}>
+                                Crew ID
+                              </TableCell>
+                              <TableCell sx={{ p: 0 }}>: {formResult.crewId}</TableCell>
+                            </TableRow>
+                            <TableRow sx={{ '& td': { border: 0, py: 0.75 } }}>
+                              <TableCell component="th" scope="row" sx={{ p: 0, fontWeight: 'bold', color: 'text.secondary' }}>
+                                Flight Number
+                              </TableCell>
+                              <TableCell sx={{ p: 0 }}>: {formResult.flightNumber}</TableCell>
+                            </TableRow>
+                            <TableRow sx={{ '& td': { border: 0, py: 0.75 } }}>
+                              <TableCell component="th" scope="row" sx={{ p: 0, fontWeight: 'bold', color: 'text.secondary' }}>
+                                Flight Date
+                              </TableCell>
+                              <TableCell sx={{ p: 0 }}>: {formResult.flightDate}</TableCell>
+                            </TableRow>
+                            <TableRow sx={{ '& td': { border: 0, py: 0.75 } }}>
+                              <TableCell component="th" scope="row" sx={{ p: 0, fontWeight: 'bold', color: 'text.secondary' }}>
+                                Aircraft Type
+                              </TableCell>
+                              <TableCell sx={{ p: 0 }}>: {formResult.aircraftType}</TableCell>
+                            </TableRow>
+                            <TableRow sx={{ '& td': { border: 0, py: 0.75 } }}>
+                              <TableCell sx={{ p: 0 }} colSpan={2}>
+                                <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexDirection: 'column', flexWrap: 'wrap' }}>
+                                  {[formResult.seat1, formResult.seat2, formResult.seat3].map((seat, index) => (
+                                    <Box
+                                      key={index}
+                                      sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 0.5,
+                                        backgroundColor: '#eff6ff',
+                                        color: '#1d4ed8',
+                                        border: '1px solid #bfdbfe',
+                                        borderRadius: 2,
+                                        px: 1.5,
+                                        py: 0.5,
+                                        fontWeight: 'bold',
+                                        fontSize: '0.85rem',
+                                        boxShadow: '0 2px 4px rgba(29, 78, 216, 0.05)',
+                                      }}
+                                    >
+                                      Seat {index + 1}: {seat}
+                                    </Box>
+                                  ))}
+                                </Box>
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    ) : (
+                      <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 4 }}>
+                        <Typography variant="body2" color="text.disabled" align="center">
+                          Detail voucher dan alokasi kursi penerbangan akan muncul di sini setelah Anda menekan tombol Generate.
+                        </Typography>
+                      </Box>
+                    )
                   }
-                </Select>
-              </FormControl>
-              <Tooltip title="Generate Voucher">
-                <Button type="submit" variant="contained" loading={loading} size="large">
-                  <AirplaneTicketIcon sx={{ marginRight: 1 }} /> Generate
-                </Button>
-              </Tooltip>
-            </Box>
+                </Box>
+              </Grid>
+            </Grid>
           </Paper>
         </Container>
       </Box>
